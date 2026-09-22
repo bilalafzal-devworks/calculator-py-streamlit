@@ -128,4 +128,3 @@ def calculate(expression):
     except Exception:
 
         return None, "Invalid expression."
-```
