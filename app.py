@@ -348,4 +348,3 @@ if st.session_state.history:
 else:
 
     st.info("No calculations yet.")
-```
