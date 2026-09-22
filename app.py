@@ -1,266 +1,132 @@
-import streamlit as st
-
-from calculator import calculate
-
-
-# --------------------------------------------------
-# Page Configuration
-# --------------------------------------------------
-
-st.set_page_config(
-    page_title="Interactive Calculator",
-    page_icon="🧮",
-    layout="centered"
-)
+```python
+import ast
+import math
+import operator
 
 
-# --------------------------------------------------
-# Title
-# --------------------------------------------------
-
-st.title("🧮 Interactive Calculator")
-
-st.caption(
-    "A simple scientific calculator built with Python and Streamlit"
-)
-
-
-# --------------------------------------------------
-# Session State
-# --------------------------------------------------
-
-if "expression" not in st.session_state:
-    st.session_state.expression = ""
-
-if "history" not in st.session_state:
-    st.session_state.history = []
+OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+}
 
 
-# --------------------------------------------------
-# Display
-# --------------------------------------------------
-
-st.text_input(
-    "Expression",
-    key="expression",
-    placeholder="Example: 10 + 5 * 2"
-)
-
-
-# --------------------------------------------------
-# Number Buttons
-# --------------------------------------------------
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    if st.button("7", use_container_width=True):
-        st.session_state.expression += "7"
-
-with col2:
-    if st.button("8", use_container_width=True):
-        st.session_state.expression += "8"
-
-with col3:
-    if st.button("9", use_container_width=True):
-        st.session_state.expression += "9"
-
-with col4:
-    if st.button("÷", use_container_width=True):
-        st.session_state.expression += "/"
+FUNCTIONS = {
+    "sqrt": math.sqrt,
+    "sin": lambda x: math.sin(math.radians(x)),
+    "cos": lambda x: math.cos(math.radians(x)),
+    "tan": lambda x: math.tan(math.radians(x)),
+    "log": math.log10,
+    "ln": math.log,
+}
 
 
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    if st.button("4", use_container_width=True):
-        st.session_state.expression += "4"
-
-with col2:
-    if st.button("5", use_container_width=True):
-        st.session_state.expression += "5"
-
-with col3:
-    if st.button("6", use_container_width=True):
-        st.session_state.expression += "6"
-
-with col4:
-    if st.button("×", use_container_width=True):
-        st.session_state.expression += "*"
+CONSTANTS = {
+    "pi": math.pi,
+    "e": math.e,
+}
 
 
-col1, col2, col3, col4 = st.columns(4)
+def evaluate(node):
 
-with col1:
-    if st.button("1", use_container_width=True):
-        st.session_state.expression += "1"
+    if isinstance(node, ast.Constant):
 
-with col2:
-    if st.button("2", use_container_width=True):
-        st.session_state.expression += "2"
+        if isinstance(node.value, (int, float)):
+            return node.value
 
-with col3:
-    if st.button("3", use_container_width=True):
-        st.session_state.expression += "3"
+        raise ValueError("Invalid value.")
 
-with col4:
-    if st.button("-", use_container_width=True):
-        st.session_state.expression += "-"
+    if isinstance(node, ast.UnaryOp):
 
+        if isinstance(node.op, ast.USub):
+            return -evaluate(node.operand)
 
-col1, col2, col3, col4 = st.columns(4)
+        if isinstance(node.op, ast.UAdd):
+            return evaluate(node.operand)
 
-with col1:
-    if st.button("0", use_container_width=True):
-        st.session_state.expression += "0"
+        raise ValueError("Invalid unary operator.")
 
-with col2:
-    if st.button(".", use_container_width=True):
-        st.session_state.expression += "."
+    if isinstance(node, ast.BinOp):
 
-with col3:
-    if st.button("(", use_container_width=True):
-        st.session_state.expression += "("
+        left = evaluate(node.left)
+        right = evaluate(node.right)
 
-with col4:
-    if st.button(")", use_container_width=True):
-        st.session_state.expression += ")"
+        operation = OPERATORS.get(type(node.op))
 
+        if operation is None:
+            raise ValueError("Operator not supported.")
 
-# --------------------------------------------------
-# Control Buttons
-# --------------------------------------------------
+        return operation(left, right)
 
-col1, col2, col3 = st.columns(3)
+    if isinstance(node, ast.Name):
 
-with col1:
+        if node.id in CONSTANTS:
+            return CONSTANTS[node.id]
 
-    if st.button("Clear", use_container_width=True):
+        raise ValueError(f"Unknown value: {node.id}")
 
-        st.session_state.expression = ""
+    if isinstance(node, ast.Call):
 
-        st.rerun()
+        if not isinstance(node.func, ast.Name):
+            raise ValueError("Invalid function.")
 
+        function_name = node.func.id
 
-with col2:
-
-    if st.button("⌫ Backspace", use_container_width=True):
-
-        st.session_state.expression = (
-            st.session_state.expression[:-1]
-        )
-
-        st.rerun()
-
-
-with col3:
-
-    if st.button("=", use_container_width=True):
-
-        result, error = calculate(
-            st.session_state.expression
-        )
-
-        if error:
-
-            st.error(error)
-
-        else:
-
-            calculation = (
-                f"{st.session_state.expression} = {result}"
+        if function_name not in FUNCTIONS:
+            raise ValueError(
+                f"Function '{function_name}' is not supported."
             )
 
-            st.session_state.history.append(calculation)
+        if len(node.args) != 1:
+            raise ValueError(
+                f"{function_name}() requires one argument."
+            )
 
-            st.session_state.expression = str(result)
+        argument = evaluate(node.args[0])
 
-            st.rerun()
+        return FUNCTIONS[function_name](argument)
 
-
-# --------------------------------------------------
-# Scientific Functions
-# --------------------------------------------------
-
-st.subheader("Scientific Functions")
+    raise ValueError("Invalid expression.")
 
 
-col1, col2, col3, col4 = st.columns(4)
+def calculate(expression):
 
-with col1:
+    try:
 
-    if st.button("√", use_container_width=True):
+        if not expression.strip():
+            return None, "Enter an expression first."
 
-        st.session_state.expression += "sqrt("
+        expression = expression.replace("×", "*")
+        expression = expression.replace("÷", "/")
 
-with col2:
+        tree = ast.parse(expression, mode="eval")
 
-    if st.button("sin", use_container_width=True):
+        result = evaluate(tree.body)
 
-        st.session_state.expression += "sin("
+        if not math.isfinite(result):
+            return None, "Result is not a finite number."
 
-with col3:
+        if isinstance(result, float) and result.is_integer():
+            result = int(result)
 
-    if st.button("cos", use_container_width=True):
+        return result, None
 
-        st.session_state.expression += "cos("
+    except ZeroDivisionError:
 
-with col4:
+        return None, "Cannot divide by zero."
 
-    if st.button("tan", use_container_width=True):
+    except ValueError as error:
 
-        st.session_state.expression += "tan("
+        return None, str(error)
 
+    except SyntaxError:
 
-col1, col2, col3, col4 = st.columns(4)
+        return None, "Invalid expression."
 
-with col1:
+    except Exception:
 
-    if st.button("log", use_container_width=True):
-
-        st.session_state.expression += "log("
-
-with col2:
-
-    if st.button("ln", use_container_width=True):
-
-        st.session_state.expression += "ln("
-
-with col3:
-
-    if st.button("π", use_container_width=True):
-
-        st.session_state.expression += "pi"
-
-with col4:
-
-    if st.button("e", use_container_width=True):
-
-        st.session_state.expression += "e"
-
-
-# --------------------------------------------------
-# History
-# --------------------------------------------------
-
-st.subheader("Calculation History")
-
-
-if st.session_state.history:
-
-    for calculation in reversed(
-        st.session_state.history
-    ):
-
-        st.write(calculation)
-
-
-    if st.button("Clear History"):
-
-        st.session_state.history = []
-
-        st.rerun()
-
-else:
-
-    st.info("No calculations yet.")
+        return None, "Invalid expression."
+```
