@@ -1,11 +1,5 @@
 import streamlit as st
-
 from calculator import calculate
-
-
-# --------------------------------------------------
-# PAGE CONFIGURATION
-# --------------------------------------------------
 
 st.set_page_config(
     page_title="Interactive Calculator",
@@ -13,338 +7,207 @@ st.set_page_config(
     layout="centered"
 )
 
+st.title("🧮 Interactive Calculator")
 
-# --------------------------------------------------
-# SESSION STATE
-# --------------------------------------------------
 
-if "expression" not in st.session_state:
-    st.session_state.expression = ""
+# -----------------------------
+# Session State
+# -----------------------------
+
+if "expression_input" not in st.session_state:
+    st.session_state.expression_input = ""
 
 if "history" not in st.session_state:
     st.session_state.history = []
 
-
-# --------------------------------------------------
-# FUNCTIONS
-# --------------------------------------------------
-
-def add_to_expression(value):
-
-    st.session_state.expression += value
+if "error" not in st.session_state:
+    st.session_state.error = ""
 
 
-def clear_expression():
+# -----------------------------
+# Functions
+# -----------------------------
 
-    st.session_state.expression = ""
+def add(value):
+    st.session_state.expression_input += value
+    st.session_state.error = ""
+
+
+def clear():
+    st.session_state.expression_input = ""
+    st.session_state.error = ""
 
 
 def backspace():
-
-    st.session_state.expression = (
-        st.session_state.expression[:-1]
+    st.session_state.expression_input = (
+        st.session_state.expression_input[:-1]
     )
+    st.session_state.error = ""
 
 
-def calculate_result():
+def do_calculate():
+    expression = st.session_state.expression_input
 
-    expression = st.session_state.expression
+    if not expression:
+        return
 
     result, error = calculate(expression)
 
     if error:
-
         st.session_state.error = error
+        return
 
-    else:
+    st.session_state.history.append(
+        f"{expression} = {result}"
+    )
 
-        calculation = f"{expression} = {result}"
+    st.session_state.expression_input = str(result)
+    st.session_state.error = ""
 
-        st.session_state.history.append(calculation)
 
-        st.session_state.expression = str(result)
+# -----------------------------
+# Expression Input
+# -----------------------------
+# Pressing ENTER inside this form submits the form.
 
-        st.session_state.error = ""
+with st.form("calculator_form"):
 
+    st.text_input(
+        "Expression",
+        key="expression_input",
+        placeholder="Example: 10 + 5 * 2"
+    )
 
-# --------------------------------------------------
-# TITLE
-# --------------------------------------------------
+    submitted = st.form_submit_button(
+        "Enter / =",
+        use_container_width=True
+    )
 
-st.title("🧮 Interactive Calculator")
+    if submitted:
+        do_calculate()
 
-st.caption(
-    "A simple scientific calculator built with Python and Streamlit"
-)
 
+# -----------------------------
+# Error
+# -----------------------------
 
-# --------------------------------------------------
-# DISPLAY
-# --------------------------------------------------
+if st.session_state.error:
+    st.error(st.session_state.error)
 
-st.text_input(
-    "Expression",
-    value=st.session_state.expression,
-    disabled=False
-)
 
+# -----------------------------
+# Calculator Buttons
+# -----------------------------
 
-# --------------------------------------------------
-# NUMBER BUTTONS
-# --------------------------------------------------
+# Row 1
+cols = st.columns(4)
 
-col1, col2, col3, col4 = st.columns(4)
+with cols[0]:
+    st.button("7", on_click=add, args=("7",),
+              use_container_width=True)
 
-with col1:
+with cols[1]:
+    st.button("8", on_click=add, args=("8",),
+              use_container_width=True)
 
-    if st.button("7", use_container_width=True):
-        add_to_expression("7")
-        st.rerun()
+with cols[2]:
+    st.button("9", on_click=add, args=("9",),
+              use_container_width=True)
 
-with col2:
+with cols[3]:
+    st.button("/", on_click=add, args=("/ ",),
+              use_container_width=True)
 
-    if st.button("8", use_container_width=True):
-        add_to_expression("8")
-        st.rerun()
 
-with col3:
+# Row 2
+cols = st.columns(4)
 
-    if st.button("9", use_container_width=True):
-        add_to_expression("9")
-        st.rerun()
+with cols[0]:
+    st.button("4", on_click=add, args=("4",),
+              use_container_width=True)
 
-with col4:
+with cols[1]:
+    st.button("5", on_click=add, args=("5",),
+              use_container_width=True)
 
-    if st.button("÷", use_container_width=True):
-        add_to_expression("/")
-        st.rerun()
+with cols[2]:
+    st.button("6", on_click=add, args=("6",),
+              use_container_width=True)
 
+with cols[3]:
+    st.button("*", on_click=add, args=("*",),
+              use_container_width=True)
 
-col1, col2, col3, col4 = st.columns(4)
 
-with col1:
+# Row 3
+cols = st.columns(4)
 
-    if st.button("4", use_container_width=True):
-        add_to_expression("4")
-        st.rerun()
+with cols[0]:
+    st.button("1", on_click=add, args=("1",),
+              use_container_width=True)
 
-with col2:
+with cols[1]:
+    st.button("2", on_click=add, args=("2",),
+              use_container_width=True)
 
-    if st.button("5", use_container_width=True):
-        add_to_expression("5")
-        st.rerun()
+with cols[2]:
+    st.button("3", on_click=add, args=("3",),
+              use_container_width=True)
 
-with col3:
+with cols[3]:
+    st.button("-", on_click=add, args=("-",),
+              use_container_width=True)
 
-    if st.button("6", use_container_width=True):
-        add_to_expression("6")
-        st.rerun()
 
-with col4:
+# Row 4
+cols = st.columns(4)
 
-    if st.button("×", use_container_width=True):
-        add_to_expression("*")
-        st.rerun()
+with cols[0]:
+    st.button("0", on_click=add, args=("0",),
+              use_container_width=True)
 
+with cols[1]:
+    st.button(".", on_click=add, args=(".",),
+              use_container_width=True)
 
-col1, col2, col3, col4 = st.columns(4)
+with cols[2]:
+    st.button("+", on_click=add, args=("+",),
+              use_container_width=True)
 
-with col1:
+with cols[3]:
+    st.button("=", on_click=do_calculate,
+              use_container_width=True)
 
-    if st.button("1", use_container_width=True):
-        add_to_expression("1")
-        st.rerun()
 
-with col2:
+# -----------------------------
+# Control Buttons
+# -----------------------------
 
-    if st.button("2", use_container_width=True):
-        add_to_expression("2")
-        st.rerun()
+cols = st.columns(2)
 
-with col3:
+with cols[0]:
+    st.button(
+        "Clear",
+        on_click=clear,
+        use_container_width=True
+    )
 
-    if st.button("3", use_container_width=True):
-        add_to_expression("3")
-        st.rerun()
+with cols[1]:
+    st.button(
+        "⌫ Backspace",
+        on_click=backspace,
+        use_container_width=True
+    )
 
-with col4:
 
-    if st.button("-", use_container_width=True):
-        add_to_expression("-")
-        st.rerun()
-
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-
-    if st.button("0", use_container_width=True):
-        add_to_expression("0")
-        st.rerun()
-
-with col2:
-
-    if st.button(".", use_container_width=True):
-        add_to_expression(".")
-        st.rerun()
-
-with col3:
-
-    if st.button("(", use_container_width=True):
-        add_to_expression("(")
-        st.rerun()
-
-with col4:
-
-    if st.button(")", use_container_width=True):
-        add_to_expression(")")
-        st.rerun()
-
-
-# --------------------------------------------------
-# CONTROL BUTTONS
-# --------------------------------------------------
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-
-    if st.button("Clear", use_container_width=True):
-
-        clear_expression()
-
-        st.session_state.error = ""
-
-        st.rerun()
-
-
-with col2:
-
-    if st.button("⌫ Backspace", use_container_width=True):
-
-        backspace()
-
-        st.rerun()
-
-
-with col3:
-
-    if st.button("=", use_container_width=True):
-
-        calculate_result()
-
-        st.rerun()
-
-
-# --------------------------------------------------
-# ERROR MESSAGE
-# --------------------------------------------------
-
-if "error" in st.session_state:
-
-    if st.session_state.error:
-
-        st.error(st.session_state.error)
-
-
-# --------------------------------------------------
-# SCIENTIFIC FUNCTIONS
-# --------------------------------------------------
-
-st.subheader("Scientific Functions")
-
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-
-    if st.button("√", use_container_width=True):
-
-        add_to_expression("sqrt(")
-
-        st.rerun()
-
-with col2:
-
-    if st.button("sin", use_container_width=True):
-
-        add_to_expression("sin(")
-
-        st.rerun()
-
-with col3:
-
-    if st.button("cos", use_container_width=True):
-
-        add_to_expression("cos(")
-
-        st.rerun()
-
-with col4:
-
-    if st.button("tan", use_container_width=True):
-
-        add_to_expression("tan(")
-
-        st.rerun()
-
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-
-    if st.button("log", use_container_width=True):
-
-        add_to_expression("log(")
-
-        st.rerun()
-
-with col2:
-
-    if st.button("ln", use_container_width=True):
-
-        add_to_expression("ln(")
-
-        st.rerun()
-
-with col3:
-
-    if st.button("π", use_container_width=True):
-
-        add_to_expression("pi")
-
-        st.rerun()
-
-with col4:
-
-    if st.button("e", use_container_width=True):
-
-        add_to_expression("e")
-
-        st.rerun()
-
-
-# --------------------------------------------------
-# HISTORY
-# --------------------------------------------------
-
-st.subheader("Calculation History")
-
+# -----------------------------
+# History
+# -----------------------------
 
 if st.session_state.history:
 
-    for calculation in reversed(
-        st.session_state.history
-    ):
+    st.divider()
+    st.subheader("History")
 
-        st.write(calculation)
-
-    if st.button("Clear History"):
-
-        st.session_state.history = []
-
-        st.rerun()
-
-else:
-
-    st.info("No calculations yet.")
+    for item in reversed(st.session_state.history):
+        st.write(item)
